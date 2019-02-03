@@ -24,6 +24,7 @@ function ApplicationControl(cursorClip) {
         TOGGLE_AUTOMATION: 59
     };
 
+    var previousLayout = "";
     var arrangeButton = controls.createButton(MAIN_BUTTONS.ARRANGE);
     arrangeButton.setCallback(function (value) {
         //arrangeButton.sendValue(value);
@@ -37,10 +38,26 @@ function ApplicationControl(cursorClip) {
                 currentMode.recalcView();
                 // rotateView();
             } else {
-                if (layout === "MIX") {
-                    application.setPanelLayout("ARRANGE");
-                } else if (layout == "ARRANGE") {
+                if (modifiers.isSelectDown()) {
+                    if (layout === "EDIT") {
+                        application.setPanelLayout(previousLayout === "" ? "ARRANGE" : previousLayout);
+                        previousLayout = "";
+                    } else {
+                        previousLayout = layout;
+                        application.setPanelLayout("EDIT");
+                    }
+                }
+
+                else if (layout === "ARRANGE") {
                     application.setPanelLayout("MIX");
+                } else if (layout === "MIX") {
+                    //if (previousLayout !== "")
+                    //    application.setPanelLayout(previousLayout);
+                    //else
+                    application.setPanelLayout("ARRANGE");
+                } else {
+                        application.setPanelLayout(previousLayout === "" ? "ARRANGE" : previousLayout);
+                        previousLayout = "";
                 }
             }
         }
@@ -61,7 +78,7 @@ function ApplicationControl(cursorClip) {
         layout = newPanelLayout;
         if (layout === "MIX") {
             arrangeButton.sendValue(0);
-        } else if (layout == "ARRANGE") {
+        } else if (layout === "ARRANGE" || layout === "EDIT") {
             arrangeButton.sendValue(127);
         }
     }, 16);
@@ -73,7 +90,7 @@ function ApplicationControl(cursorClip) {
         return application;
     };
 
-
+   
     this.showAudioEditor = function () {
         application.toggleDevices();
         application.toggleNoteEditor();

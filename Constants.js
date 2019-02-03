@@ -38,7 +38,7 @@ var _colorTable = {};
 var ModifierMask = {
   Shift: 0x1,
   Select: 0x2,
-  Duplicate: 0x4
+    Duplicate: 0x4
 };
 
 var NoteStr = [ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];

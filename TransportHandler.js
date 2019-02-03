@@ -210,18 +210,18 @@ function TransportHandler(trackHandler, cursorDevice) {
         if (value === 0) {
             return;
         }
-        if (shift) {
+        if (modifiers.isShiftDown()) {
             transport.stop();
         } else {
-            transport.play();
-        }
+                transport.play();
+            }
     });
 
     recButton.setCallback(function (value) {
         if (value === 0) {
             return;
         }
-        if (shift) {
+        if (modifiers.isShiftDown()) {
             transport.toggleLauncherOverdub();
         } else {
             var status = trackHandler.getTrackStatus();
@@ -287,7 +287,7 @@ function TransportHandler(trackHandler, cursorDevice) {
                     break;
                 case NavButtonMode.Device:
                     if (value !== 0) {
-                        if (shift) {
+                        if (modifiers.isShiftDown()) {
                             cursorDevice.selectParent();
                             cursorDevice.selectInEditor();
                         } else {
@@ -323,7 +323,7 @@ function TransportHandler(trackHandler, cursorDevice) {
                     break;
                 case NavButtonMode.Device:
                     if (value !== 0) {
-                        if (shift) {
+                        if (modifiers.isShiftDown()) {
                             if (currentSlotList && currentSlotList.length > 0) {
                                 cursorDevice.selectFirstInSlot(currentSlotList[0]);
                             }

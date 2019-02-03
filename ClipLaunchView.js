@@ -284,7 +284,7 @@ function ClipLaunchView(trackBank) {
         /** @type {Track} */
         var track = trackBank.getTrack(colt);
         var slots = track.getClipLauncherSlots();
-        
+
         //added proper clear implementation
         if (modifiers.isSelectDown()) {//------------------------------SELECT
             track.selectInMixer();
@@ -306,7 +306,7 @@ function ClipLaunchView(trackBank) {
                 playState[_index].hascontent = true;
             }
             resendColors();
-            
+
         } else {
             /** @type {PlayState} */
             var state = playState[_index];

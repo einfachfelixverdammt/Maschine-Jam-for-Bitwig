@@ -13,9 +13,8 @@
  * @author Eric Ahrens 
  */
 
-
 loadAPI(1);
-host.defineController("Native Instruments Felix", "Maschine JAM Felix version", "0.6", "cdbbe630-9edb-11e8-b568-0800200c9a66");
+host.defineController("Native Instruments Felix", "Maschine JAM Felix version", "0.7", "cdbbe630-9edb-11e8-b568-0800200c9a66");
 host.defineMidiPorts(1, 1);
 host.addDeviceNameBasedDiscoveryPair(["Maschine Jam - 1"], ["Maschine Jam - 1"]);
 host.addDeviceNameBasedDiscoveryPair(["Maschine Jam - 2"], ["Maschine Jam - 2"]);
@@ -78,6 +77,7 @@ var applicationControl = null;
 var transport = null;
 
 var gGlipOrientation = ORIENTATION.TrackBased;
+var knobControl = null;
 
 function init() {
 	var numTracks = 8;
@@ -96,7 +96,7 @@ function init() {
 	var cursorDevice = cursorTrack.createCursorDevice();
 
 	var clip = host.createCursorClip(8, 128);
-
+        
 	applicationControl = new ApplicationControl(clip);
 	patternLengthView = new PatternLengthView(clip);
 	globalClipView = new GlobalClipView(patternLengthView, clip);
@@ -107,7 +107,7 @@ function init() {
 
 	var trackBankContainer = new TrackBankContainer(trackBank);
 	var efxTrackBankContainer = new EffectBankContainer(host.createEffectTrackBank(7, numScenes), host.createMasterTrack(numScenes));
-	var trackViewContainer = new TrackViewContainer(trackBankContainer, efxTrackBankContainer);
+	var trackViewContainer = new TrackViewContainer(trackBankContainer, efxTrackBankContainer,cursorTrack);
 
 	var sceneView = new SceneLaunchView(trackBank, numScenes, numTracks);
 	var noteView = gNoteViewManager.createNoteLayoutView(noteInput);
@@ -117,8 +117,8 @@ function init() {
 	clipView.setIndication(true);
 
 	var cliplaunchMode = new ClipMode(clipView, trackViewContainer, sceneView, trackViewContainer.getMixerView().trackStates());
-	var padMode = new PadMode(noteView, drumpadView, trackViewContainer, sceneView, clip);
-	var stepMode = new StepMode(noteView, drumpadView, trackViewContainer, trackHandler, clip);
+	var padMode = new PadMode(noteView, drumpadView, trackViewContainer, sceneView, clip, cursorDevice, sceneView);
+	var stepMode = new StepMode(noteView, drumpadView, trackViewContainer, trackHandler, clip,cursorDevice, sceneView);
 
 	var efxClipView = new ClipLaunchView(efxTrackBankContainer);
 	var effectMode = new ClipMode(efxClipView, trackViewContainer, sceneView, trackViewContainer.getEffectView().trackStates());
@@ -130,7 +130,8 @@ function init() {
 
 	controls.sliderBank = new SliderModeHandler(trackBankContainer, efxTrackBankContainer, numTracks, cursorDevice, trackHandler);
 
-	var mainKnobControl = new MainKnobKontrol(cursorTrack, transport.transport(), clip, cursorDevice);
+    var mainKnobControl = new MainKnobKontrol(cursorTrack, transport.transport(), clip, cursorDevice);
+    knobControl = mainKnobControl;
 
 	var modeHandler = new ModeHandler(cliplaunchMode, padMode, stepMode, effectMode, clip, trackHandler, trackViewContainer);
 
@@ -143,10 +144,10 @@ function init() {
 
 	var stopAllButton = controls.createButton(MAIN_BUTTONS.IN_BUTTON);
 	stopAllButton.setCallback(function (value) {
-		stopAllButton.sendValue(value);
-		if (value > 0) {
-			rootTrack.stop();
-		}
+        stopAllButton.sendValue(value);
+            if (value > 0) {
+                rootTrack.stop();
+            }
 	});
 
 	var primaryDevice = cursorTrack.createCursorDevice("Primary", 0);
@@ -161,9 +162,9 @@ function init() {
 	shiftReceivers.push(modeHandler);
 
 	handleblink();
-	host.scheduleTask(handleBatchUpdate, null, 1);
+    host.scheduleTask(handleBatchUpdate, null, 1);
 	println(" #### Maschine JAM Version 0.7 ######");
-
+       
 	notificationSettings = host.getNotificationSettings();
 	host.scheduleTask(function () {
 		var unsIsEnabeld = notificationSettings.getUserNotificationsEnabled();
@@ -181,11 +182,11 @@ function GlobalClipView(patternLengthView, clip) {
 	var clipSelected = false;
 	/** @type {Clip} */
 	var clipTrackType = "EMPTY";
-	var track = clip.getTrack();
+    var track = clip.getTrack();
 
 	this.duplicateContent = function () {
-		clip.duplicateContent();
-	};
+        clip.duplicateContent();
+    };
 
 	track.exists().addValueObserver(function (value) {
 		clipSelected = value;
@@ -269,15 +270,15 @@ EffectBankContainer.prototype.selectClipInSlot = function (trackIndex) {
 function initCursorTrack(cursorTrack, cursorDevice, padMode, stepMode) {
 	var nameMapping = {};
 	var nameMappingSize = 0;
-
-	cursorDevice.hasDrumPads().addValueObserver(function (hasPads) {
+        
+        cursorDevice.hasDrumPads().addValueObserver(function (hasPads) {
 		stepMode.setHasDrumPads(hasPads);
-	});
-
-	/** @type {DrumPadBank|Channel} drumPadBank */
+           });
+           
+        /** @type {DrumPadBank|Channel} drumPadBank */
 	var drumPadBank = cursorDevice.createDrumPadBank(16);
 	drumPadBank.setChannelScrollStepSize(4);
-
+        
 	function DrumPad() {
 		/**
 		 * @param {Channel} channel
@@ -675,30 +676,69 @@ function initLeftButtons() {
 	var dirPadLeft = controls.createButton(DirectionPad.LEFT);
 	var dirPadRight = controls.createButton(DirectionPad.RIGHT);
 	var dirPadDown = controls.createButton(DirectionPad.DOWN);
+    var speed = 6;
+    var i = 0;
 
 	dirPadUp.setCallback(
 		function (value) {
+
 			if (value !== 0) {
-				currentMode.navigate(DirectionPad.TOP);
+                if (knobControl.getBrowsing()) {
+                    knobControl.getBrowser().getCursorFilter().selectFirst();
+                    knobControl.getBrowser().getCursorFilter().selectNext();
+
+                    if (modifiers.isShiftDown()) {
+                        //for (i = 0; i < speed; i++) {
+                            knobControl.getBrowser().getCursorFilter().createCursorItem().selectFirst();
+                        //}
+                    }
+                    else {
+                        knobControl.getBrowser().getCursorFilter().createCursorItem().selectPrevious();
+                    }
+                }
+                else {
+                    currentMode.navigate(DirectionPad.TOP);
+                }
 			}
 		});
 	dirPadLeft.setCallback(
 		function (value) {
 			if (value !== 0) {
-				currentMode.navigate(DirectionPad.LEFT);
+                //if (knobControl.getBrowsing()) {
+                //    knobControl.getBrowser().getCursorFilter().selectPrevious();
+                //} else {
+                    currentMode.navigate(DirectionPad.LEFT);
+                //}
 			}
 		});
 	dirPadRight.setCallback(
 		function (value) {
 			modifiers.setDpadRightDown(value);
 			if (value !== 0) {
-				currentMode.navigate(DirectionPad.RIGHT);
+                //if (knobControl.getBrowsing()) {
+                //    knobControl.getBrowser().getCursorFilter().selectNext();
+                //} else {
+                    currentMode.navigate(DirectionPad.RIGHT);
+                //}
 			}
 		});
 	dirPadDown.setCallback(
 		function (value) {
 			if (value !== 0) {
-				currentMode.navigate(DirectionPad.DOWN);
+                if (knobControl.getBrowsing()) {
+                    knobControl.getBrowser().getCursorFilter().selectFirst();
+                    knobControl.getBrowser().getCursorFilter().selectNext();
+
+                    if (modifiers.isShiftDown()) {
+                        //for (i = 0; i < speed; i++) {
+                        knobControl.getBrowser().getCursorFilter().createCursorItem().selectLast();
+                        //}
+                    }
+                    else {
+                        knobControl.getBrowser().getCursorFilter().createCursorItem().selectNext();
+                    }
+                }
+                else { currentMode.navigate(DirectionPad.DOWN); }
 			}
 		});
 
@@ -715,14 +755,18 @@ function onMidi(status, data1, data2) {
 	}
 }
 
+var timeLastShiftPressed = Date.now();
 function onSysex(data) {
 	var i;
 
-	if (data === "f000210915004d5000014d01f7") {
+    if (data === "f000210915004d5000014d01f7") {
 		for (i = 0; i < shiftReceivers.length; i++) {
 			shiftReceivers[i].notifyShift(true);
 		}
 	} else if (data === "f000210915004d5000014d00f7") {
+        if (calcTimeElapsedms(timeLastShiftPressed, Date.now()) < 400)
+            modifiers.setShiftLock(!modifiers.getShiftLock());
+        timeLastShiftPressed = Date.now();
 		for (i = 0; i < shiftReceivers.length; i++) {
 			shiftReceivers[i].notifyShift(false);
 		}
@@ -733,6 +777,10 @@ function onSysex(data) {
 		println(" RECEIVED SysEx = " + data);
 	}
 }
+
+function calcTimeElapsedms(start, end) {
+    return end - start;
+};
 
 function exit() {
 	println(" ==== Shutting Down ===== ");

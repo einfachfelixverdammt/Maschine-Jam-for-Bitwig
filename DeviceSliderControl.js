@@ -37,6 +37,10 @@ function DeviceSliderControl(cursorDevice) {
     var parameterValues = {};
     var parameterOffset = 0;
     var parameterIds = [];
+
+    // touch tracking stuff
+    var touchables = [];
+
     var idToPageValue = {};
     var deviceName ="/NODEVICE/";
     var macroVisible = false;
@@ -94,6 +98,12 @@ function DeviceSliderControl(cursorDevice) {
         return macrovalues[index];
     };
 
+    this.setMacroTouchValue = function(index, value)  {
+        if (value == 0 && touchables[index]) {
+            cursorDevice.getMacro(index).getAmount().set(0, 128);
+        }
+    }; 
+    
     this.values = function() {
         return macrovalues;
     };
@@ -193,7 +203,7 @@ function DeviceSliderControl(cursorDevice) {
     }
     
     cursorDevice.addNameObserver(16, "/NODEVICE/", function(name){
-        //println(" ###### " + name + " ######### ");
+        // println(" ###### " + name + " ######### ");
         if(deviceName !== "/NODEVICE/") {
             deviceToOffsetMap[deviceName] = parameterOffset;
         }
@@ -227,7 +237,7 @@ function DeviceSliderControl(cursorDevice) {
         if(id in idToPageValue) {
             var paramSel = idToPageValue[id];
             paramSel.value = value;
-            //println(" ["+idToPageValue[id].name+"] = " + idToPageValue[id].value);
+            // println(" ["+idToPageValue[id].name+"] = " + idToPageValue[id].value);
             if(display && mode === ControlModes.DEVICE) {
                 display.updateValue(paramSel.intVal(), paramSel.index());
             }
@@ -239,20 +249,30 @@ function DeviceSliderControl(cursorDevice) {
      * @param {Macro} macro
      */
     function registerMacro(macroindex, macro) {
-        macro.getAmount().addValueObserver(128,
+        var amt = macro.getAmount();
+        amt.addValueObserver(128,
             function(value) {
                 macrovalues[macroindex] = value;
                 if(display && mode === ControlModes.MACRO) {
                      display.updateValue(value, macroindex);
                 } 
             });
+        amt.addLabelObserver(20, "", function(name) {
+            if (name.endsWith(" TFX")) {
+                touchables[macroindex] = true;
+                // cursorDevice.getMacro(macroindex).getAmount().set(0, 128);
+            } else {
+                touchables[macroindex] = false;
+            }
+        });
     }
     
     (function() {
         for(var i=0;i<8;i++) {
             macrovalues.push(0);
+            touchables.push(false);
             parameterSelection.push(new ParameterPageValue(i));
             registerMacro(i,cursorDevice.getMacro(i));
-        }
+        };
     })();
 }

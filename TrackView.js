@@ -197,7 +197,7 @@ function TrackView(trackBank, parent, basemode) {
         }
 
         var track = trackBank.getTrack(index);
-        //host.showPopupNotification("index of track: " + index);
+        // host.showPopupNotification("index of track: " + index);
         if (modifiers.isShiftDown()) {
             
             switch (index) {

@@ -13,6 +13,12 @@
  * @author Eric Ahrens 
  */
 
+ /**
+  * Added touch tracking hack: any active macro whose label ends with " TFX" will be pulled to zero upon touchstrip release.
+  * This more or less replicates Maschine's PERFORM effects.
+  * Preconfigured "Touch FX layer" preset is included.
+  */
+
 
 loadAPI(1);
 host.defineController("Native Instruments Felix", "WIP script", "0.8", "cdbbe630-9edb-11e8-b568-0800200c9a66");

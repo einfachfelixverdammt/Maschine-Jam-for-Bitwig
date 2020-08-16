@@ -50,17 +50,15 @@ The extended script does a couple of things:
 
 Note that any performance knob on any device will work this way, as long as it's on the active page. The presets are simply a convenience.
 
-The layer preset is a container with 8 modulation knobs added to "Perform" page ("macros" in API v1 speak). Each layer has the same basic structure: a bus audio receiver followed by effects. An additional "dry sum" layer routes dry audio when effect is not enabled.
+The layer preset is a container with 8 modulation knobs added to "Perform" page ("macros" in API v1 speak). Each layer has the same basic structure: a bus audio receiver followed by effects. An additional "dry sum" layer routes dry audio when effect is not enabled. The knob routes audio to either the effect or the dry bus, by enabling one of the two audio receivers.
 
-In addition to macro knobs the preset has 8 Quantize modulators, each driven by the macro knob and driving the Mix knobs. The modulators are tuned to scale input values above 0 to 1, implementing the toggle behavior (can also think of it as a logic module with a threshold really close to 0 instead of 0.5).
-
-The group preset contains 8 "bus" tracks for convenience, source tracks can be routed to them directly.
+The group preset contains 8 "bus" tracks, source tracks can be routed to them directly.
 
 ## Caveats
 
-The "off" detection is imprecise and a little laggy. This is probably because Bitwig has to convert a 7-bit CC value to a smooth continuous signal, and it takes a bit of time for that signal to smoothly drop to 0. Also, the Quantize threshold had to be tuned manually to sit somewhere below the point that corresponds to CC value of 1.
+The "off" detection is laggy (as of BWS 3.2.7). This is probably because Bitwig has to convert a 7-bit CC value to a smooth continuous signal, and it takes a bit of time for that signal to smoothly drop to 0.
 
 Therefore:
 
-* The time between touchstrip release and the effect cutover is short but noticeable, you can even see the knob jump to zero faster than Quantize reacts. The good news is this lags seems pretty consistent, anticipating it during performance should be easy.
+* The time between touchstrip release and the effect cutover is short but noticeable, you can even see the knob jump to zero faster than Quantize reacts. The good news is this lags seems pretty consistent.
 * If you manage to slide the strip all the way to zero the effect will disengage even though the strip is still being touched. This is the price for stealing a value to widen a parameter type. Overall it's not a bad deal.

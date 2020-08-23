@@ -100,7 +100,7 @@ function DeviceSliderControl(cursorDevice) {
 
     this.setMacroTouchValue = function(index, value)  {
         if (value == 0 && touchables[index]) {
-            cursorDevice.getMacro(index).getAmount().set(0, 128);
+            cursorDevice.getMacro(index).getAmount().setRaw(0);
         }
     }; 
     

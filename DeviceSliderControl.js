@@ -40,6 +40,7 @@ function DeviceSliderControl(cursorDevice) {
 
     // touch tracking stuff
     var touchables = [];
+    var touchPage = -1;
 
     var idToPageValue = {};
     var deviceName ="/NODEVICE/";
@@ -99,8 +100,11 @@ function DeviceSliderControl(cursorDevice) {
     };
 
     this.setMacroTouchValue = function(index, value)  {
-        if (value == 0 && touchables[index]) {
-            cursorDevice.getMacro(index).getAmount().setRaw(0);
+        if (touchPage >= 0) {
+            cursorDevice.setParameterPage(touchPage);
+            var param = cursorDevice.getParameter(index);
+            param.setRaw((value == 0) ? 0 : 1);
+            cursorDevice.setParameterPage(0);
         }
     }; 
     
@@ -243,28 +247,27 @@ function DeviceSliderControl(cursorDevice) {
             }
         }
     });
+
+    cursorDevice.addPageNamesObserver(function(names) {
+        for (i in names) {
+            if (names[i] == 'TOUCH') {
+                touchPage = i;
+            }
+        }
+    })
     
    /**
      * @param {int} macroindex
      * @param {Macro} macro
      */
     function registerMacro(macroindex, macro) {
-        var amt = macro.getAmount();
-        amt.addValueObserver(128,
+        macro.getAmount().addValueObserver(128,
             function(value) {
                 macrovalues[macroindex] = value;
                 if(display && mode === ControlModes.MACRO) {
                      display.updateValue(value, macroindex);
                 } 
             });
-        amt.addLabelObserver(20, "", function(name) {
-            if (name.endsWith(" TFX")) {
-                touchables[macroindex] = true;
-                // cursorDevice.getMacro(macroindex).getAmount().set(0, 128);
-            } else {
-                touchables[macroindex] = false;
-            }
-        });
     }
     
     (function() {

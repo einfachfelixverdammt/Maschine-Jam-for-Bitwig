@@ -8,57 +8,42 @@ in Bitwig but with annoying limitations:
 * Limited Jamming: with a single Jam controlling both Bitwig and Maschine's FX simultaneously is impossible.
 * Limited selection: Maschine provides only a handful of FX to choose from. FX in Bitwig are just awesomer.
 
-Wouldn't it be great if this mode existed in Bitwig itself? Well, now it sort of does!
+Wouldn't it be great if this mode existed in Bitwig itself? Well, now it does!
+
+# In the box
+
+This extension will look for a performance page called `TOUCH` (doesn't need to be the first page). If found, it expects it to contain 8 buttons. The button is toggled on and off when a corresponding touch strip is touched.
+
+A container preset is included with the touch buttons already wired up.
 
 # Quick start
 
-The "touch FX" mode works by combining several components:
+## PERFORM FX on a single track
 
-* "Touch FX layer" container combines 8 "PERFORM" style controls with 8 FX chains meant to be used as inserts.
-* "Touch FX bus group" is a group scene that contains the "Touch FX layer" container together with 8 pre-routed tracks that serve as busses.
-* Script changes designed to work with the container preset.
+* Load the `Touch FX layer single` preset onto a track.
+* Configure effects.
+* Press `MACRO`.
+* Jam.
 
-Let's say we want to apply performance FX to a signal coming out of a track.
+### Configuring effects
 
-## Setup
+The container contains a single layer of 8 FX selectors in series, each wired to the touch gesture via a button. Each selector contains two layers, an empty (dry) layer and another empty layer for the effect. Touching the corresponding strip routes incoming audio to the effect (second layer), releasing the strip bypasses the effect. Both the bypassed audio and the effect tail will be heard.
 
-1. Load the "Touch FX bus layer" to create the "Touch FX" group.
-2. Route the source track output to one of the tracks in "Touch FX" group.
-3. In the group's "Touch FX layer" device, navigate to the layer corresponding to the track.
-4. The layer is its own audio chain - put your desired effects after Audio Receiver device.
+Load your desired effects in the FX layer in the selector and wire the knobs as desired.
 
-## Playing
+Other configurations are possible (e.g. if FX tail is not needed, replace the selector with the FX and modulate the Mix knob with the button).
 
-1. Make sure the "Touch FX layer" device is selected. Selecting the "Touch FX" track by pressing the track button on Jam is usually enough since it's the first device on that track.
-2. Hit "MACRO".
-3. Touch the corresponding touchstrip.
+## PERFORM FX on multiple tracks (like Maschine)
 
-You'll hear the effect engage (100% wet). After releasing the strip you'll hear unaffected source audio again, plus any effect tails.
+A little more involved. Here is one way to do it:
 
-## More setup
-
-By default the macro knob is not connected to anything interesting, all it does is flip the Mix knob on the inner receiver to 1 when the macro knob is above 0. The knob is a modulation source, route it to your FX parameters as desired.
-
-# How it works and where to go from here
-
-This solution is a bit of a hack. We combine two parameters (a variable parameter value and a toggle) into one by treating 0 as "off". Ideally we'd be able to control a knob and a toggle button.
-
-The extended script does a couple of things:
-
-* When a device is selected, it looks for macro knobs with labels ending in " TFX". 
-* When a touchstrip corresponding to one of those knobs is released, it forces the knob to 0.
-
-Note that any performance knob on any device will work this way, as long as it's on the active page. The presets are simply a convenience.
-
-The layer preset is a container with 8 modulation knobs added to "Perform" page ("macros" in API v1 speak). Each layer has the same basic structure: a bus audio receiver followed by effects. An additional "dry sum" layer routes dry audio when effect is not enabled. The knob routes audio to either the effect or the dry bus, by enabling one of the two audio receivers.
-
-The group preset contains 8 "bus" tracks, source tracks can be routed to them directly.
-
-## Caveats
-
-The "off" detection is laggy (as of BWS 3.2.7). This is probably because Bitwig has to convert a 7-bit CC value to a smooth continuous signal, and it takes a bit of time for that signal to smoothly drop to 0.
-
-Therefore:
-
-* The time between touchstrip release and the effect cutover is short but noticeable, you can even see the knob jump to zero faster than Quantize reacts. The good news is this lags seems pretty consistent.
-* If you manage to slide the strip all the way to zero the effect will disengage even though the strip is still being touched. This is the price for stealing a value to widen a parameter type. Overall it's not a bad deal.
+* Create a group with 8 tracks, these will serve as insert FX busses
+* Load the preset onto the group.
+* In "Touch FX layer" replace the single layer with 8 layers, each consisting of an Audio Receiver (disabled) followed by a desired effect.
+* Add one more layer for the dry signal when FX are bypassed, containing 8 Audio Receivers (enabled).
+* Route audio in the group:
+  * Each track should be received by one Receiver in front of an effect and one Receiver in the "dry" layer
+  * The touch button should enable the FX Receiver and disable the "dry" receiver
+  * Set track inputs and outputs to none
+* Route audio tracks in the project to desired group tracks.
+* On the JAM select the group track and jam.

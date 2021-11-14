@@ -121,6 +121,10 @@ function SliderModeHandler(mixerTrackBank, effectTrackBank, numTracks, cursorDev
         }
     }
 
+    function changeMacroTouchValue(index, value) {
+        currentMode.setMacroTouchValue(index, value);
+    }
+
     function changeSendLevel(value, slider, index) {
         var offset = getOffset(slider, value);
         if (modifiers.isShiftDown()) {
@@ -313,7 +317,7 @@ function SliderModeHandler(mixerTrackBank, effectTrackBank, numTracks, cursorDev
         if (controlMode !== ControlModes.MACRO) {
             switchToDeviceMode(ControlModes.MACRO);
             controlMode = ControlModes.MACRO;
-            sliderView.assignSliderCallback(changeMacroValue);
+            sliderView.assignSliderCallback(changeMacroValue, changeMacroTouchValue);
             sliderView.refresh();
             currentMode.updateSliders();
             radioModes();

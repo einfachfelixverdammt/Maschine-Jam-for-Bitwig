@@ -37,6 +37,11 @@ function DeviceSliderControl(cursorDevice) {
     var parameterValues = {};
     var parameterOffset = 0;
     var parameterIds = [];
+
+    // touch tracking stuff
+    var touchables = [];
+    var touchPage = -1;
+
     var idToPageValue = {};
     var deviceName ="/NODEVICE/";
     var macroVisible = false;
@@ -94,6 +99,15 @@ function DeviceSliderControl(cursorDevice) {
         return macrovalues[index];
     };
 
+    this.setMacroTouchValue = function(index, value)  {
+        if (touchPage >= 0) {
+            cursorDevice.setParameterPage(touchPage);
+            var param = cursorDevice.getParameter(index);
+            param.setRaw((value == 0) ? 0 : 1);
+            cursorDevice.setParameterPage(0);
+        }
+    }; 
+    
     this.values = function() {
         return macrovalues;
     };
@@ -193,7 +207,7 @@ function DeviceSliderControl(cursorDevice) {
     }
     
     cursorDevice.addNameObserver(16, "/NODEVICE/", function(name){
-        //println(" ###### " + name + " ######### ");
+        // println(" ###### " + name + " ######### ");
         if(deviceName !== "/NODEVICE/") {
             deviceToOffsetMap[deviceName] = parameterOffset;
         }
@@ -227,12 +241,20 @@ function DeviceSliderControl(cursorDevice) {
         if(id in idToPageValue) {
             var paramSel = idToPageValue[id];
             paramSel.value = value;
-            //println(" ["+idToPageValue[id].name+"] = " + idToPageValue[id].value);
+            // println(" ["+idToPageValue[id].name+"] = " + idToPageValue[id].value);
             if(display && mode === ControlModes.DEVICE) {
                 display.updateValue(paramSel.intVal(), paramSel.index());
             }
         }
     });
+
+    cursorDevice.addPageNamesObserver(function(names) {
+        for (i in names) {
+            if (names[i] == 'TOUCH') {
+                touchPage = i;
+            }
+        }
+    })
     
    /**
      * @param {int} macroindex
@@ -251,8 +273,9 @@ function DeviceSliderControl(cursorDevice) {
     (function() {
         for(var i=0;i<8;i++) {
             macrovalues.push(0);
+            touchables.push(false);
             parameterSelection.push(new ParameterPageValue(i));
             registerMacro(i,cursorDevice.getMacro(i));
-        }
+        };
     })();
 }
